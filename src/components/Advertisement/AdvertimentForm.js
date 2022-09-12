@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect, useRef } from "react";
 import {
   TextField,
   makeStyles,
@@ -6,11 +6,14 @@ import {
   Button,
   Typography,
   CircularProgress,
+  Paper,
+  IconButton,
+  Backdrop,
+  Collapse,
 } from "@material-ui/core";
 import { Context as AdvertisementContext } from "../../context/AdvertisementContext";
-import Backdrop from "@material-ui/core/Backdrop";
-import { Alert } from "@material-ui/lab";
-import Paper from "@material-ui/core/Paper";
+import Alert from "@material-ui/lab/Alert";
+import CloseIcon from "@material-ui/icons/Close";
 
 const useStyles = makeStyles((theme) => ({
   backdrop: {
@@ -32,19 +35,45 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const AdvertimentForm = ({ product_id }) => {
+//Function component for advertise form
+const AdvertimentForm = ({ product_id, setRefresh, editData }) => {
   const classes = useStyles();
-  const { state, createAdvertisement } = useContext(AdvertisementContext);
+
+  const { createAdvertisement } = useContext(AdvertisementContext);
   const [open, setLoading] = useState(false);
   const [errors, setError] = useState({});
-  const [message, setMessage] = useState("");
-
+  const [response, setMessage] = useState([]);
+  const [alertOpen, setOpen] = useState(false);
+  const [formTitle, setFormTitle] = useState("Create");
   const [inputField, setInputField] = useState({
-    title: "",
-    valid_until: "",
-    discount_percentage: "",
+    title: editData.title ? editData.title : "",
+    valid_until: editData.valid_until ? editData.valid_until : "",
+    discount_percentage: editData.discount_percentage
+      ? editData.discount_percentage
+      : "",
+  });
+  const titleRef = useRef();
+  const percentageRef = useRef();
+  const validUntilRef = useRef();
+
+  let alertResponse = {};
+
+  useEffect(() => {
+    if (Object.keys(editData).length > 0) {
+      setFormTitle("Update");
+      titleRef.current.value = editData.title ? editData.title : "";
+      validUntilRef.current.value = editData.valid_until
+        ? editData.valid_until
+        : "";
+      percentageRef.current.value = editData.discount_percentage
+        ? editData.discount_percentage
+        : "";
+    }
   });
 
+  const newForm = () => {
+    setFormTitle("Create");
+  };
   const formValidation = () => {
     const { title, valid_until, discount_percentage } = inputField;
     let errors = {};
@@ -75,11 +104,28 @@ const AdvertimentForm = ({ product_id }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (formValidation()) {
-      inputField["product_id"] = product_id;
-      setInputField(inputField);
-      const data = await createAdvertisement(inputField, setLoading);
+    try {
+      e.preventDefault();
+      if (formValidation()) {
+        inputField["product_id"] = product_id;
+        setInputField(inputField);
+
+        setRefresh(false);
+
+        const data = await createAdvertisement(inputField, setLoading);
+
+        alertResponse["error"] = data.error;
+        alertResponse["message"] = data.message;
+
+        setMessage(alertResponse);
+        setOpen(true);
+        setRefresh(true);
+      }
+    } catch (e) {
+      alertResponse["error"] = true;
+      alertResponse["message"] = "Something went wrong!";
+      setOpen(true);
+      setMessage(alertResponse);
     }
   };
 
@@ -92,10 +138,10 @@ const AdvertimentForm = ({ product_id }) => {
       <div className={classes.root}>
         <Paper className={classes.paper}>
           <form className={classes.form} onSubmit={handleSubmit}>
-            <Typography className={classes.heading}>
-              Create Advertisement
+            <Typography className={classes.heading} spacing={3}>
+              {formTitle} Advertisement
             </Typography>
-            <Grid container spacing={0} spacing={3}>
+            <Grid container spacing={3}>
               <Grid item md={6} xs={12} sm={12}>
                 <TextField
                   label="Title *"
@@ -104,6 +150,7 @@ const AdvertimentForm = ({ product_id }) => {
                   name="title"
                   onChange={handleInputChange}
                   error={errors["title"]}
+                  inputRef={titleRef}
                 />
               </Grid>
               <Grid item md={6} xs={12} sm={12}>
@@ -113,11 +160,12 @@ const AdvertimentForm = ({ product_id }) => {
                   label="Valid Until"
                   type="date"
                   onChange={handleInputChange}
-                  defaultValue="2022-09-06"
                   className={classes.textField}
                   InputLabelProps={{
                     shrink: true,
                   }}
+                  error={errors["valid_until"]}
+                  inputRef={validUntilRef}
                 />
               </Grid>
               <Grid item md={6} xs={12} sm={12}>
@@ -126,21 +174,50 @@ const AdvertimentForm = ({ product_id }) => {
                   variant="outlined"
                   fullWidth
                   name="discount_percentage"
+                  type="number"
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
                   onChange={handleInputChange}
                   error={errors["discount_percentage"]}
+                  inputRef={percentageRef}
                 />
               </Grid>
             </Grid>
 
-            <div className={classes.button}>
-              <Button type="submit" variant="contained" color="primary">
-                Save
-              </Button>
-              <Button variant="contained" color="secondary">
-                Cancel
-              </Button>
-            </div>
+            <Grid container justify="flex-end">
+              <div className={classes.button}>
+                <Button onClick={newForm} variant="contained" color="primary">
+                  New
+                </Button>
+                <Button type="submit" variant="contained" color="primary">
+                  {formTitle}
+                </Button>
+                <Button variant="contained" color="secondary">
+                  Cancel
+                </Button>
+              </div>
+            </Grid>
           </form>
+          <Collapse in={alertOpen}>
+            <Alert
+              severity={response.error ? "error" : "success"}
+              action={
+                <IconButton
+                  aria-label="close"
+                  color="inherit"
+                  size="small"
+                  onClick={() => {
+                    setOpen(false);
+                  }}
+                >
+                  <CloseIcon fontSize="inherit" />
+                </IconButton>
+              }
+            >
+              {response.message}
+            </Alert>
+          </Collapse>
         </Paper>
       </div>
     </>

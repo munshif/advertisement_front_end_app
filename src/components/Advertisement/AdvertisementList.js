@@ -1,22 +1,26 @@
 import React, { useContext, useEffect, useState } from "react";
-import PageHeader from "../../components/Layout/PageHeader";
 import { DataGrid } from "@material-ui/data-grid";
 import { Context as ProductsContext } from "../../context/AdvertisementContext";
 import { Button, Grid, ButtonGroup } from "@material-ui/core";
-import ListIcon from "@material-ui/icons/List";
 
 // Get all advertisements belongs to specific product from database
-
-const AdvertisementList = ({ product_id }) => {
-  const { state, getAdvertisementsyProduct } = useContext(ProductsContext);
+const AdvertisementList = ({ product_id, refresh, setEdit }) => {
+  const {
+    state: { ad_list },
+    getAdvertisementsyProduct,
+  } = useContext(ProductsContext);
 
   const [page, setPage] = useState(null);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  //set values to edit
+  const handleEdit = (event, eventValue) => {
+    setEdit({ ...eventValue.row });
+  };
+
   useEffect(() => {
     let active = true;
-
     (async () => {
       setLoading(true);
 
@@ -35,7 +39,7 @@ const AdvertisementList = ({ product_id }) => {
     return () => {
       active = false;
     };
-  }, [page, product_id]);
+  }, [page, product_id, refresh]);
 
   //Advertisements Table Column Headers
   const columns = [
@@ -82,7 +86,7 @@ const AdvertisementList = ({ product_id }) => {
             <Button
               color="primary"
               onClick={(event) => {
-                // handleActionClick(event, cellValues);
+                handleEdit(event, cellValues);
               }}
             >
               Edit
@@ -113,7 +117,7 @@ const AdvertisementList = ({ product_id }) => {
         <div style={{ height: 400, width: "100%" }}>
           {/* Bind the adverstisements data to the  Data Grid(Table Design) */}
           <DataGrid
-            rows={state.results ? state.results.data : []}
+            rows={ad_list ? ad_list.results.data : []}
             columns={columns}
             pagination
             pageSize={5}

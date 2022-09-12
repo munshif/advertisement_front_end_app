@@ -4,9 +4,7 @@ import dbApi from "../api/dbapi";
 const advertisementReducer = (state, action) => {
   switch (action.type) {
     case "ADS_BY_PRODUCT":
-      return action.payload;
-    case "CREATE_AD":
-      return action.payload;
+      return { ...state, ad_list: action.payload };
     default:
       return state;
   }
@@ -26,7 +24,7 @@ const createAdvertisement = (dispatch) => async (inputField, setLoading) => {
     setLoading(!false);
     const response = await dbApi.post("/advertisements", inputField);
     setLoading(!true);
-    // dispatch({ type: "CREATE_AD", payload: response.data });
+    return response.data;
   } catch (error) {
     setLoading(!true);
   }

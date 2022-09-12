@@ -1,11 +1,8 @@
 import React, { useContext, useEffect, useState } from "react";
 import PageHeader from "../../components/Layout/PageHeader";
-import { DataGrid } from "@material-ui/data-grid";
-import { Context as ProductsContext } from "../../context/ProductsContext";
-import { Button, Grid } from "@material-ui/core";
+import { Grid } from "@material-ui/core";
 import ListIcon from "@material-ui/icons/List";
 import { useLocation } from "react-router-dom";
-import CustomAccordion from "../../components/Common/CustomAccordion";
 import ProductDetail from "../../components/Product/ProductDetail";
 import AdvertisementList from "../../components/Advertisement/AdvertisementList";
 import AdvertisementForm from "../../components/Advertisement/AdvertimentForm";
@@ -13,6 +10,8 @@ import AdvertisementForm from "../../components/Advertisement/AdvertimentForm";
 const ProductAdvertisement = (props) => {
   const location = useLocation();
   const [productData, setProductData] = useState([]);
+  const [refresh, setRefresh] = useState(false);
+  const [editData, setEdit] = useState({});
 
   useEffect(() => {
     setProductData(location.state ? location.state.cellValues.row : []);
@@ -38,10 +37,18 @@ const ProductAdvertisement = (props) => {
               <ProductDetail data={productData} />
             </Grid>
             <Grid item xs={12} sm={8}>
-              <AdvertisementForm product_id={productData.id} />
+              <AdvertisementForm
+                product_id={productData.id}
+                setRefresh={setRefresh}
+                editData={editData}
+              />
             </Grid>
           </Grid>
-          <AdvertisementList product_id={productData.id} />
+          <AdvertisementList
+            product_id={productData.id}
+            refresh={refresh}
+            setEdit={setEdit}
+          />
         </div>
       </Grid>
     </>
